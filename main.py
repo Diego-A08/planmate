@@ -1,12 +1,18 @@
 import telebot
 import json
 import os
+from flask import Flask, request
 
 # ============================
-#   CARGAR TOKEN DEL BOT
+#   CONFIGURACIÓN DEL BOT
 # ============================
+
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
+
+WEBHOOK_URL = "https://planmate-zwen.onrender.com/webhook"
+
+app = Flask(__name__)
 
 # ============================
 #   MEMORIA BÁSICA DEL USUARIO
@@ -43,7 +49,7 @@ def start(message):
     get_user_memory(user_id)
 
     welcome = (
-        "Soy PlanMate. Estoy aquí para ayudarte a organizar tu vida, tu estudio y tu día.\n\n"
+        "Soy PlanMate. Estoy aquí para ayudarte a organizar tu vida.\n\n"
         "Antes de empezar, dime: ¿cómo te gusta que te hable?\n"
         "1) Directo\n"
         "2) Serio\n"
@@ -92,8 +98,25 @@ def general_response(message):
     bot.send_message(message.chat.id, responses[tone])
 
 # ============================
-#   INICIAR BOT
+#   WEBHOOK
 # ============================
 
-print("PlanMate está activo.")
-bot.infinity_polling()
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    json_str = request.get_data().decode("utf-8")
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "OK", 200
+
+@app.route("/", methods=["GET"])
+def home():
+    return "PlanMate está activo con webhook.", 200
+
+# ============================
+#   INICIAR WEBHOOK
+# ============================
+
+if __name__ == "__main__":
+    bot.remove_webhook()
+    bot.set_webhook(url=WEBHOOK_URL)
+    app.run(host="0.0.0.0", port=10000)
