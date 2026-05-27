@@ -2,6 +2,8 @@ import telebot
 import json
 import os
 from flask import Flask, request
+import threading
+from checkin import start_checkin, process_mood, process_goals, daily_checkin_thread
 
 # ============================
 #   CONFIGURACIÓN DEL BOT
@@ -39,12 +41,21 @@ def get_user_memory(user_id):
         save_memory(memory)
     return memory[user_id]
 
+# ==============================
+# COMANDO /checkin
+# ==============================
+@bot.message_handler(commands=['checkin'])
+def manual_checkin(message):
+    chat_id = message.chat.id
+    start_checkin(bot, chat_id)
+
 # ============================
 #   COMANDO /start
 # ============================
 
 @bot.message_handler(commands=["start"])
 def start(message):
+    print("CHAT_ID:", message.chat.id)
     user_id = message.from_user.id
     get_user_memory(user_id)
 
@@ -77,6 +88,27 @@ def set_tone(message):
     save_memory(memory)
 
     bot.send_message(message.chat.id, "Perfecto. Ajusto mi tono. Vamos a empezar.")
+
+# ==============================
+# MANEJAR RESPUESTAS DEL CHECK-IN
+# ==============================
+@bot.message_handler(func=lambda msg: True)
+def handle_messages(message):
+    chat_id = message.chat.id
+    text = message.text.lower()
+
+    # Procesar estado de ánimo
+    if text in ["bien", "normal", "mal"]:
+        process_mood(bot, chat_id, text)
+        return
+
+    # Procesar objetivos (si el usuario escribe una frase con 2+ palabras)
+    if len(text.split()) >= 2:
+        process_goals(bot, chat_id, text)
+        return
+
+    # Respuesta por defecto
+    bot.send_message(chat_id, "No entendí eso, Diego-Alexander. Usa /checkin para empezar tu rutina.")
 
 # ============================
 #   RESPUESTA GENERAL
