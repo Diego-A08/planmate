@@ -92,6 +92,7 @@ def set_tone(message):
 # ==============================
 # MANEJAR RESPUESTAS DEL CHECK-IN
 # ==============================
+
 @bot.message_handler(func=lambda msg: True)
 def handle_messages(message):
     chat_id = message.chat.id
@@ -109,25 +110,6 @@ def handle_messages(message):
 
     # Respuesta por defecto
     bot.send_message(chat_id, "No entendí eso, Diego-Alexander. Usa /checkin para empezar tu rutina.")
-
-# ============================
-#   RESPUESTA GENERAL
-# ============================
-
-@bot.message_handler(func=lambda m: True)
-def general_response(message):
-    user_id = str(message.from_user.id)
-    user_data = get_user_memory(user_id)
-    tone = user_data["tone"]
-
-    responses = {
-        "directo": "Dime qué necesitas y vamos al grano.",
-        "serio": "Estoy listo para ayudarte. ¿Qué necesitas?",
-        "suave": "Aquí estoy para ayudarte con calma. ¿Qué te gustaría hacer?",
-        "equilibrado": "Perfecto, ¿en qué puedo ayudarte hoy?"
-    }
-
-    bot.send_message(message.chat.id, responses[tone])
 
 # ============================
 #   WEBHOOK
